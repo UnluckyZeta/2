@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<input id="name" placeholder="Full Name">
+
+<input id="email" placeholder="Email">
+
+<button onclick="createUser()">
+  Create Engineer
+</button>
+
+<pre id="result"></pre>
+
+<script>
+async function createUser() {
+  const res = await fetch(
+    "https://vwdwpswpvqdfpsrkmgzy.supabase.co/functions/v1/createe-engineer",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+
+        Authorization:
+          "Bearer sb_publishable_yI6-VfmXaCmbr7E8GCq6zg_zTUe-rMB",
+      },
+
+      body: JSON.stringify({
+        full_name: document.getElementById("name").value,
+        email: document.getElementById("email").value,
+      }),
+    },
+  );
+
+  const json = await res.json();
+
+  document.getElementById("result").textContent =
+    JSON.stringify(json, null, 2);
+}
+</script>
+
+</body>
+</html>
