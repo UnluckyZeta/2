@@ -1,244 +1,191 @@
-
-<!DOCTYPE html>
+<!doctype html>
 
 <html>
-<head>
-  <meta charset="UTF-8" />
-  <title>FieldCam Admin</title>
+  <head>
+    <meta charset="UTF-8" />
+    <title>FieldCam Admin</title>
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 1200px;
-      margin: 40px auto;
-      padding: 20px;
-    }
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 20px;
+      }
 
-    input {
-      padding: 8px;
-      margin: 4px;
-    }
+      input {
+        padding: 8px;
+        margin: 4px;
+      }
 
-    button {
-      padding: 8px 12px;
-      margin: 4px;
-      cursor: pointer;
-    }
+      button {
+        padding: 8px 12px;
+        margin: 4px;
+        cursor: pointer;
+      }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
 
-    td,
-    th {
-      border: 1px solid #ddd;
-      padding: 10px;
-    }
+      td,
+      th {
+        border: 1px solid #ddd;
+        padding: 10px;
+      }
 
-    th {
-      background: #f5f5f5;
-    }
+      th {
+        background: #f5f5f5;
+      }
 
-    pre {
-      background: #f5f5f5;
-      padding: 12px;
-      overflow: auto;
-      max-height: 500px;
-    }
+      pre {
+        background: #f5f5f5;
+        padding: 12px;
+        overflow: auto;
+        max-height: 500px;
+      }
 
-    .actions button {
-      margin-right: 6px;
-    }
-    #logs table {
-  width: 100%;
-}
+      .actions button {
+        margin-right: 6px;
+      }
+      #logs table {
+        width: 100%;
+      }
 
-#logs td {
-  max-width: 300px;
-  word-break: break-word;
-}
-  </style>
+      #logs td {
+        max-width: 300px;
+        word-break: break-word;
+      }
+    </style>
+  </head>
 
-</head>
+  <body>
+    <h2>Create Engineer</h2>
 
-<body>
+    <input id="name" placeholder="Full Name" />
 
-<h2>Create Engineer</h2>
+    <input id="email" placeholder="Email" />
 
-<input
-id="name"
-placeholder="Full Name"
-/>
+    <button onclick="createUser()">Create Engineer</button>
 
-<input
-id="email"
-placeholder="Email"
-/>
+    <pre id="result"></pre>
 
-<button onclick="createUser()">
-  Create Engineer
-</button>
+    <hr />
+    <div id="summary"></div>
 
-<pre id="result"></pre>
+    <input
+      id="search"
+      placeholder="Search engineer..."
+      oninput="loadEngineers()"
+      style="padding: 8px; width: 300px; margin: 10px 0"
+    />
+    <h2>Engineers</h2>
 
-<hr>
-<div id="summary"></div>
+    <button onclick="loadEngineers()">Refresh Engineers</button>
 
-<input
-  id="search"
-  placeholder="Search engineer..."
-  oninput="loadEngineers()"
-  style="
-    padding:8px;
-    width:300px;
-    margin:10px 0;
-  "
-/>
-<h2>Engineers</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Engineer Code</th>
+          <th>Device ID</th>
+          <th>Last Photo</th>
+          <th>Days</th>
+          <th>Status</th>
+          <th>GPS Risk</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
 
-<button onclick="loadEngineers()">
-  Refresh Engineers
-</button>
+      <tbody id="engineers"></tbody>
+    </table>
 
-<table>
-  <thead>
-<tr>
-  <th>Name</th>
-  <th>Email</th>
-  <th>Engineer Code</th>
-  <th>Device ID</th>
-  <th>Last Photo</th>
-  <th>Days</th>
-  <th>Status</th>
-  <th>GPS Risk</th>
-  <th>Actions</th>
-</tr>
-  </thead>
+    <hr />
 
-  <tbody id="engineers"></tbody>
-</table>
+    <h2>Engineer Logs</h2>
 
-<hr>
+    <div id="logs">Select an engineer...</div>
 
-<h2>Engineer Logs</h2>
+    <script>
+      if (localStorage.getItem("admin") !== "true") {
+        window.location.href = "./login.html";
+      }
+      const BASE_URL = "https://vwdwpswpvqdfpsrkmgzy.supabase.co/functions/v1";
 
-<div id="logs">
-Select an engineer...
-</div>
+      const TOKEN = "sb_publishable_yI6-VfmXaCmbr7E8GCq6zg_zTUe-rMB";
 
-<script>
-  if (
-  localStorage.getItem("admin") !== "true"
-) {
-  window.location.href =
-    "./login.html";
-}
-const BASE_URL =
-  "https://vwdwpswpvqdfpsrkmgzy.supabase.co/functions/v1";
+      async function createUser() {
+        try {
+          const res = await fetch(`${BASE_URL}/createe-engineer`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${TOKEN}`,
+            },
+            body: JSON.stringify({
+              full_name: document.getElementById("name").value,
+              email: document.getElementById("email").value,
+            }),
+          });
 
-const TOKEN =
-  "sb_publishable_yI6-VfmXaCmbr7E8GCq6zg_zTUe-rMB";
+          const json = await res.json();
 
-async function createUser() {
-  try {
-    const res = await fetch(
-      `${BASE_URL}/createe-engineer`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type":
-            "application/json",
-          Authorization:
-            `Bearer ${TOKEN}`,
-        },
-        body: JSON.stringify({
-          full_name:
-            document.getElementById("name").value,
-          email:
-            document.getElementById("email").value,
-        }),
-      },
-    );
+          document.getElementById("result").textContent = JSON.stringify(
+            json,
+            null,
+            2,
+          );
 
-    const json =
-      await res.json();
+          if (!res.ok) {
+            alert(json.error ?? "Failed");
+            return;
+          }
 
-    document.getElementById(
-      "result",
-    ).textContent =
-      JSON.stringify(
-        json,
-        null,
-        2,
-      );
+          loadEngineers();
+        } catch (error) {
+          console.error(error);
+        }
+      }
+      function getStatusBadge(status) {
+        switch (status) {
+          case "active":
+            return '<span style="color:green;font-weight:bold">🟢 Active</span>';
 
-    if (!res.ok) {
-      alert(
-        json.error ??
-        "Failed"
-      );
-      return;
-    }
+          case "warning":
+            return '<span style="color:orange;font-weight:bold">🟡 Warning</span>';
 
-    loadEngineers();
-  } catch (error) {
-    console.error(error);
-  }
-}
-function getStatusBadge(status) {
-  switch (status) {
-    case "active":
-      return '<span style="color:green;font-weight:bold">🟢 Active</span>';
+          case "inactive":
+            return '<span style="color:red;font-weight:bold">🔴 Inactive</span>';
 
-    case "warning":
-      return '<span style="color:orange;font-weight:bold">🟡 Warning</span>';
+          default:
+            return '<span style="color:gray;font-weight:bold">⚪ Never</span>';
+        }
+      }
+      async function loadEngineers() {
+        try {
+          const res = await fetch(`${BASE_URL}/list-eng`, {
+            headers: {
+              Authorization: `Bearer ${TOKEN}`,
+            },
+          });
 
-    case "inactive":
-      return '<span style="color:red;font-weight:bold">🔴 Inactive</span>';
+          const engineers = await res.json();
+          const active = engineers.filter((x) => x.status === "active").length;
 
-    default:
-      return '<span style="color:gray;font-weight:bold">⚪ Never</span>';
-  }
-}
-async function loadEngineers() {
-  try {
-    const res = await fetch(
-      `${BASE_URL}/list-eng`,
-      {
-        headers: {
-          Authorization:
-            `Bearer ${TOKEN}`,
-        },
-      },
-    );
+          const warning = engineers.filter(
+            (x) => x.status === "warning",
+          ).length;
 
-    const engineers =
-      await res.json();
-const active =
-  engineers.filter(
-    x => x.status === "active",
-  ).length;
+          const inactive = engineers.filter(
+            (x) => x.status === "inactive",
+          ).length;
 
-const warning =
-  engineers.filter(
-    x => x.status === "warning",
-  ).length;
+          const never = engineers.filter((x) => x.status === "never").length;
 
-const inactive =
-  engineers.filter(
-    x => x.status === "inactive",
-  ).length;
-
-const never =
-  engineers.filter(
-    x => x.status === "never",
-  ).length;
-
-document.getElementById(
-  "summary",
-).innerHTML = `
+          document.getElementById("summary").innerHTML = `
 <div style="
 display:flex;
 gap:20px;
@@ -253,69 +200,51 @@ font-weight:bold;
 </div>
 `;
 
-const search =
-  document
-    .getElementById("search")
-    .value
-    .toLowerCase();
-    const tbody =
-      document.getElementById(
-        "engineers",
-      );
+          const search = document.getElementById("search").value.toLowerCase();
+          const tbody = document.getElementById("engineers");
 
-    tbody.innerHTML = "";
+          tbody.innerHTML = "";
 
-engineers
-  .filter(engineer =>
-    (
-      (engineer.full_name ?? "") +
-      (engineer.email ?? "") +
-      (engineer.engineer_code ?? "")
-    )
-      .toLowerCase()
-      .includes(search),
-  )
-  .forEach(      engineer => {
-        const tr =
-          document.createElement(
-            "tr",
-          );
+          engineers
+            .filter((engineer) =>
+              (
+                (engineer.full_name ?? "") +
+                (engineer.email ?? "") +
+                (engineer.engineer_code ?? "")
+              )
+                .toLowerCase()
+                .includes(search),
+            )
+            .forEach((engineer) => {
+              const tr = document.createElement("tr");
 
-        tr.innerHTML = `
+              tr.innerHTML = `
           <td>${engineer.full_name ?? ""}</td>
           <td>${engineer.email ?? ""}</td>
           <td>${engineer.engineer_code ?? ""}</td>
 <td>${engineer.device_id ?? "-"}</td>
 
 <td>${
-  engineer.last_photo_at
-    ? new Date(
-        engineer.last_photo_at,
-      ).toLocaleDateString()
-    : "-"
-}</td>
+                engineer.last_photo_at
+                  ? new Date(engineer.last_photo_at).toLocaleDateString()
+                  : "-"
+              }</td>
 
-<td>${
-  engineer.days_inactive ?? "-"
-}</td>
+<td>${engineer.days_inactive ?? "-"}</td>
 
 <td>
   ${
     engineer.status === "active"
       ? "🟢 Active"
       : engineer.status === "warning"
-      ? "🟡 Warning"
-      : engineer.status === "inactive"
-      ? "🔴 Inactive"
-      : "⚪ Never"
+        ? "🟡 Warning"
+        : engineer.status === "inactive"
+          ? "🔴 Inactive"
+          : "⚪ Never"
   }
 </td>
 <td>
-  ${
-    engineer.gps_risk === "high"
-      ? "🚨 High"
-      : "✅ Normal"
-  }
+  ${engineer.gps_risk === "high" ? "🚨 High" : "✅ Normal"}
 </td>
           <td class="actions">
 
@@ -361,269 +290,183 @@ engineers
 </button>
           </td>
         `;
-if (engineer.status === "inactive") {
-  tr.style.backgroundColor = "#ffe5e5";
-}
+              if (engineer.status === "inactive") {
+                tr.style.backgroundColor = "#ffe5e5";
+              }
 
-if (engineer.status === "warning") {
-  tr.style.backgroundColor = "#fff8dc";
-}
-        tbody.appendChild(
-          tr,
-        );
-      },
-    );
-  } catch (error) {
-    console.error(error);
-  }
-}
+              if (engineer.status === "warning") {
+                tr.style.backgroundColor = "#fff8dc";
+              }
+              tbody.appendChild(tr);
+            });
+        } catch (error) {
+          console.error(error);
+        }
+      }
 
-async function editEngineer(
-  id,
-  fullName,
-  email,
-) {
-  const newName =
-    prompt(
-      "Full Name",
-      fullName,
-    );
+      async function editEngineer(id, fullName, email) {
+        const newName = prompt("Full Name", fullName);
 
-  if (!newName) {
-    return;
-  }
+        if (!newName) {
+          return;
+        }
 
-  const newEmail =
-    prompt(
-      "Email",
-      email,
-    );
+        const newEmail = prompt("Email", email);
 
-  if (!newEmail) {
-    return;
-  }
+        if (!newEmail) {
+          return;
+        }
 
-  try {
-    const res = await fetch(
-      `${BASE_URL}/update-engineer`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type":
-            "application/json",
-          Authorization:
-            `Bearer ${TOKEN}`,
-        },
-        body: JSON.stringify({
-          id,
-          full_name:
-            newName,
-          email:
-            newEmail,
-        }),
-      },
-    );
+        try {
+          const res = await fetch(`${BASE_URL}/update-engineer`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${TOKEN}`,
+              "x-admin-password": localStorage.getItem("adminPassword"),
+            },
+            body: JSON.stringify({
+              id,
+              full_name: newName,
+              email: newEmail,
+            }),
+          });
 
-    const json =
-      await res.json();
+          const json = await res.json();
 
-    if (!res.ok) {
-      alert(
-        json.error ??
-        "Failed"
-      );
-      return;
-    }
+          if (!res.ok) {
+            alert(json.error ?? "Failed");
+            return;
+          }
 
-    loadEngineers();
-  } catch (error) {
-    console.error(error);
-  }
-}
-async function deleteEngineer(
-  engineerId,
-) {
-  const confirmed = confirm(
-    "Delete this engineer permanently?",
-  );
+          loadEngineers();
+        } catch (error) {
+          console.error(error);
+        }
+      }
+      async function deleteEngineer(engineerId) {
+        const confirmed = confirm("Delete this engineer permanently?");
 
-  if (!confirmed) {
-    return;
-  }
+        if (!confirmed) {
+          return;
+        }
 
-  try {
-    const res = await fetch(
-      `${BASE_URL}/delete-engineer`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type":
-            "application/json",
-          Authorization:
-            `Bearer ${TOKEN}`,
-        },
-        body: JSON.stringify({
-          engineer_id:
-            engineerId,
-        }),
-      },
-    );
+        try {
+          const res = await fetch(`${BASE_URL}/delete-engineer`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${TOKEN}`,
+              "x-admin-password": localStorage.getItem("adminPassword"),
+            },
+            body: JSON.stringify({
+              engineer_id: engineerId,
+            }),
+          });
 
-    const json =
-      await res.json();
+          const json = await res.json();
 
-    if (!res.ok) {
-      alert(
-        json.error ??
-        "Failed",
-      );
+          if (!res.ok) {
+            alert(json.error ?? "Failed");
 
-      return;
-    }
+            return;
+          }
 
-    alert(
-      "Engineer deleted",
-    );
+          alert("Engineer deleted");
 
-    loadEngineers();
-  } catch (error) {
-    console.error(error);
-  }
-}
-async function resetPassword(
-  userId,
-) {
-  const password =
-    prompt(
-      "New Password",
-      "Field1234",
-    );
+          loadEngineers();
+        } catch (error) {
+          console.error(error);
+        }
+      }
+      async function resetPassword(userId) {
+        const password = prompt("New Password", "Field1234");
 
-  if (!password) {
-    return;
-  }
+        if (!password) {
+          return;
+        }
 
-  try {
-    const res = await fetch(
-      `${BASE_URL}/reset-password`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type":
-            "application/json",
-          Authorization:
-            `Bearer ${TOKEN}`,
-        },
-        body: JSON.stringify({
-          user_id: userId,
-          password,
-        }),
-      },
-    );
+        try {
+          const res = await fetch(`${BASE_URL}/reset-password`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${TOKEN}`,
+            },
+            body: JSON.stringify({
+              user_id: userId,
+              password,
+            }),
+          });
 
-    const json =
-      await res.json();
+          const json = await res.json();
 
-    if (!res.ok) {
-      alert(
-        json.error ??
-        "Failed"
-      );
-      return;
-    }
+          if (!res.ok) {
+            alert(json.error ?? "Failed");
+            return;
+          }
 
-    alert(
-      "Password updated",
-    );
-  } catch (error) {
-    console.error(error);
-  }
-}
+          alert("Password updated");
+        } catch (error) {
+          console.error(error);
+        }
+      }
 
-async function resetDevice(
-  engineerId,
-) {
-  if (
-    !confirm(
-      "Reset device?"
-    )
-  ) {
-    return;
-  }
+      async function resetDevice(engineerId) {
+        if (!confirm("Reset device?")) {
+          return;
+        }
 
-  try {
-    const res = await fetch(
-      `${BASE_URL}/resetDevice`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type":
-            "application/json",
-          Authorization:
-            `Bearer ${TOKEN}`,
-        },
-        body: JSON.stringify({
-          engineer_id:
-            engineerId,
-        }),
-      },
-    );
+        try {
+          const res = await fetch(`${BASE_URL}/resetDevice`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${TOKEN}`,
+            },
+            body: JSON.stringify({
+              engineer_id: engineerId,
+            }),
+          });
 
-    const json =
-      await res.json();
+          const json = await res.json();
 
-    if (!res.ok) {
-      alert(
-        json.error ??
-        "Failed"
-      );
-      return;
-    }
+          if (!res.ok) {
+            alert(json.error ?? "Failed");
+            return;
+          }
 
-    alert(
-      "Device reset successfully",
-    );
+          alert("Device reset successfully");
 
-    loadEngineers();
-  } catch (error) {
-    console.error(error);
-  }
-}
-async function viewLogs(engineerId) {
-  try {
-    const res = await fetch(
-      `${BASE_URL}/engineer-logs`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${TOKEN}`,
-        },
-        body: JSON.stringify({
-          engineer_id: engineerId,
-        }),
-      },
-    );
+          loadEngineers();
+        } catch (error) {
+          console.error(error);
+        }
+      }
+      async function viewLogs(engineerId) {
+        try {
+          const res = await fetch(`${BASE_URL}/engineer-logs`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${TOKEN}`,
+            },
+            body: JSON.stringify({
+              engineer_id: engineerId,
+            }),
+          });
 
-    const json = await res.json();
+          const json = await res.json();
 
-    const logs =
-      json.result?.data ??
-      json.data ??
-      [];
+          const logs = json.result?.data ?? json.data ?? [];
 
-    if (!logs.length) {
-      document.getElementById(
-        "logs",
-      ).innerHTML =
-        "<p>No logs found.</p>";
+          if (!logs.length) {
+            document.getElementById("logs").innerHTML = "<p>No logs found.</p>";
 
-      return;
-    }
+            return;
+          }
 
-    document.getElementById(
-      "logs",
-    ).innerHTML = `
+          document.getElementById("logs").innerHTML = `
       <table>
         <thead>
           <tr>
@@ -640,29 +483,19 @@ async function viewLogs(engineerId) {
           ${logs
             .reverse()
             .map(
-              log => `
+              (log) => `
                 <tr>
-                  <td>${new Date(
-                    log.taken_at,
-                  ).toLocaleString()}</td>
+                  <td>${new Date(log.taken_at).toLocaleString()}</td>
 
-                  <td>${Math.round(
-                    log.accuracy ?? 0,
-                  )}m</td>
+                  <td>${Math.round(log.accuracy ?? 0)}m</td>
 
-                  <td>${
-                    log.network_type ??
-                    "-"
-                  }</td>
+                  <td>${log.network_type ?? "-"}</td>
 
                   <td>${log.latitude}</td>
 
                   <td>${log.longitude}</td>
 
-                  <td>${
-                    log.address ??
-                    "-"
-                  }</td>
+                  <td>${log.address ?? "-"}</td>
                 </tr>
               `,
             )
@@ -670,24 +503,18 @@ async function viewLogs(engineerId) {
         </tbody>
       </table>
     `;
-  } catch (error) {
-    console.error(error);
-  }
-}
-["name", "email"].forEach(id => {
-  document
-    .getElementById(id)
-    .addEventListener(
-      "keydown",
-      event => {
-        if (event.key === "Enter") {
-          createUser();
+        } catch (error) {
+          console.error(error);
         }
-      },
-    );
-});
-loadEngineers();
-</script>
-
-</body>
+      }
+      ["name", "email"].forEach((id) => {
+        document.getElementById(id).addEventListener("keydown", (event) => {
+          if (event.key === "Enter") {
+            createUser();
+          }
+        });
+      });
+      loadEngineers();
+    </script>
+  </body>
 </html>

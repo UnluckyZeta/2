@@ -41,17 +41,30 @@ async function login() {
     await res.json();
 console.log(password);
 console.log(json);
-  if (!json.success) {
-    alert(
-      "Invalid password",
-    );
-    return;
-  }
-
-  localStorage.setItem(
-    "admin",
-    "true",
+if (!json.success) {
+  alert(
+    "Invalid password",
   );
+  return;
+}
+
+localStorage.setItem(
+  "admin",
+  "true",
+);
+
+localStorage.setItem(
+  "adminPassword",
+  password,
+);
+
+window.location.href =
+  "./index.html";
+
+localStorage.setItem(
+  "adminPassword",
+  password,
+);
 
   location.href =
     "index.html";
