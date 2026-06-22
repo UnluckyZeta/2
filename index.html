@@ -81,6 +81,11 @@
       oninput="loadEngineers()"
       style="padding: 8px; width: 300px; margin: 10px 0"
     />
+    From:
+<input type="date" id="dashboardFrom">
+
+To:
+<input type="date" id="dashboardTo">
     <h2>Engineers</h2>
 
     <button onclick="loadEngineers()">Refresh Engineers</button>
@@ -104,7 +109,15 @@
     </table>
 
     <hr />
+<label>From</label>
+<input type="date" id="logsFrom">
 
+<label>To</label>
+<input type="date" id="logsTo">
+
+<button onclick="reloadCurrentLogs()">
+  Apply Filter
+</button>
     <h2>Engineer Logs</h2>
 
     <div id="logs">Select an engineer...</div>
@@ -442,17 +455,31 @@ font-weight:bold;
         } catch (error) {
           console.error(error);
         }
-      }
+      }let currentEngineerId = null;
       async function viewLogs(engineerId) {
+        currentEngineerId =
+  engineerId;
+  const from =
+  document.getElementById(
+    "logsFrom",
+  ).value;
+
+const to =
+  document.getElementById(
+    "logsTo",
+  ).value;
         try {
           const res = await fetch(`${BASE_URL}/engineer-logs`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${TOKEN}`,
+              Authorization: `Bearer ${TOKEN}`,"x-admin-password":
+  localStorage.getItem(
+    "adminPassword",
+  ),
             },
             body: JSON.stringify({
-              engineer_id: engineerId,
+              engineer_id: engineerId,from,to
             }),
           });
 
@@ -507,13 +534,23 @@ font-weight:bold;
           console.error(error);
         }
       }
-      ["name", "email"].forEach((id) => {
+    
+    async function reloadCurrentLogs() {
+  if (!currentEngineerId) {
+    return;
+  }
+
+  await viewLogs(
+    currentEngineerId,
+  );
+}  ["name", "email"].forEach((id) => {
         document.getElementById(id).addEventListener("keydown", (event) => {
           if (event.key === "Enter") {
             createUser();
           }
         });
       });
+      
       loadEngineers();
     </script>
   </body>
