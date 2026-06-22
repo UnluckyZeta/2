@@ -123,8 +123,7 @@
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${TOKEN}`,  
-              "x-admin-password": localStorage.getItem("adminPassword"),
+              Authorization: `Bearer ${TOKEN}`,
             },
             body: JSON.stringify({
               full_name: document.getElementById("name").value,
@@ -169,8 +168,7 @@
         try {
           const res = await fetch(`${BASE_URL}/list-eng`, {
             headers: {
-              Authorization: `Bearer ${TOKEN}`,              "x-admin-password": localStorage.getItem("adminPassword"),
-
+              Authorization: `Bearer ${TOKEN}`,
             },
           });
 
@@ -393,8 +391,7 @@ font-weight:bold;
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${TOKEN}`,              "x-admin-password": localStorage.getItem("adminPassword"),
-
+              Authorization: `Bearer ${TOKEN}`,
             },
             body: JSON.stringify({
               user_id: userId,
@@ -425,8 +422,7 @@ font-weight:bold;
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${TOKEN}`,              "x-admin-password": localStorage.getItem("adminPassword"),
-
+              Authorization: `Bearer ${TOKEN}`,
             },
             body: JSON.stringify({
               engineer_id: engineerId,
@@ -453,8 +449,7 @@ font-weight:bold;
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${TOKEN}`,              "x-admin-password": localStorage.getItem("adminPassword"),
-
+              Authorization: `Bearer ${TOKEN}`,
             },
             body: JSON.stringify({
               engineer_id: engineerId,
