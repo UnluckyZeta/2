@@ -129,6 +129,12 @@ Select an engineer...
 </div>
 
 <script>
+  if (
+  localStorage.getItem("admin") !== "true"
+) {
+  window.location.href =
+    "./login.html";
+}
 const BASE_URL =
   "https://vwdwpswpvqdfpsrkmgzy.supabase.co/functions/v1";
 
