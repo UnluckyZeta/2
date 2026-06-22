@@ -1,206 +1,644 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
+<!doctype html>
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods":
-    "POST, OPTIONS",
-};
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>FieldCam Admin</title>
 
-const supabase = createClient(
-  Deno.env.get("SUPABASE_URL")!,
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-);
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 20px;
+      }
 
-Deno.serve(async req => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", {
-      headers: corsHeaders,
-    });
-  }
+      input {
+        padding: 8px;
+        margin: 4px;
+      }
 
-  try {
-    const {
-      from,
-      to,
-    } = await req.json();
+      button {
+        padding: 8px 12px;
+        margin: 4px;
+        cursor: pointer;
+      }
 
-    const { data: profiles, error } =
-      await supabase
-        .from("profiles")
-        .select("*")
-        .order("created_at", {
-          ascending: false,
-        });
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
 
-    if (error) {
-      throw error;
-    }
+      td,
+      th {
+        border: 1px solid #ddd;
+        padding: 10px;
+      }
 
-    const engineers = await Promise.all(
-      profiles.map(async engineer => {
-        const { data: logs } =
-          await supabase
-            .from("photo_logs")
-            .select(`
-              id,
-              taken_at,
-              accuracy,
-              speed,
-              heading,
-              altitude
-            `)
-            .eq(
-              "engineer_id",
-              engineer.id,
-            );
+      th {
+        background: #f5f5f5;
+      }
 
-        const photoCount =
-          logs?.length ?? 0;
+      pre {
+        background: #f5f5f5;
+        padding: 12px;
+        overflow: auto;
+        max-height: 500px;
+      }
 
-        const lastPhoto =
-          logs?.sort(
-            (a, b) =>
-              new Date(
-                b.taken_at,
-              ).getTime() -
-              new Date(
-                a.taken_at,
-              ).getTime(),
-          )[0];
+      .actions button {
+        margin-right: 6px;
+      }
+      #logs table {
+        width: 100%;
+      }
 
-        const lastPhotoAt =
-          lastPhoto?.taken_at ??
-          null;
+      #logs td {
+        max-width: 300px;
+        word-break: break-word;
+      }
+    </style>
+  </head>
 
-        let daysInactive =
-          null;
+  <body>
+    <h2>Create Engineer</h2>
 
-        if (lastPhotoAt) {
-          daysInactive =
-            Math.floor(
-              (Date.now() -
-                new Date(
-                  lastPhotoAt,
-                ).getTime()) /
-                86400000,
-            );
-        }
+    <input id="name" placeholder="Full Name" />
 
-        let gpsRisk =
-          "normal";
+    <input id="email" placeholder="Email" />
 
-        const suspiciousLog =
-          logs?.some(
-            log =>
-              (log.accuracy ??
-                999) < 1 &&
-              (log.speed ??
-                0) === 0 &&
-              (log.heading ??
-                0) === 0 &&
-              (log.altitude ??
-                0) === 0,
+    <button onclick="createUser()">Create Engineer</button>
+
+    <pre id="result"></pre>
+
+    <hr />
+    <div id="summary"></div>
+
+    <input
+      id="search"
+      placeholder="Search engineer..."
+      oninput="loadEngineers()"
+      style="padding: 8px; width: 300px; margin: 10px 0"
+    />
+<h3>Dashboard Filter</h3>
+
+<label>From</label>
+<input type="date" id="dashboardFrom">
+
+<label>To</label>
+<input type="date" id="dashboardTo">
+
+<button onclick="loadEngineers()">
+  Apply
+</button>
+
+<button onclick="clearDashboardFilter()">
+  Clear
+</button>
+    <h2>Engineers</h2>
+
+    <button onclick="loadEngineers()">Refresh Engineers</button>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Engineer Code</th>
+          <th>Device ID</th>
+          <th>Last Photo</th>
+          <th>Days</th>
+          <th>Status</th>
+          <th>GPS Risk</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+
+      <tbody id="engineers"></tbody>
+    </table>
+
+    <hr />
+<label>From</label>
+<input type="date" id="logsFrom">
+
+<label>To</label>
+<input type="date" id="logsTo">
+
+<button onclick="reloadCurrentLogs()">
+  Apply Filter
+</button>
+
+<button onclick="clearLogFilters()">
+  Clear Filter
+</button>
+<div id="activeFilter"></div>
+
+<h2>Engineer Logs</h2>
+
+<div id="logs">
+  Select an engineer...
+</div>
+
+    <script>
+      if (localStorage.getItem("admin") !== "true") {
+        window.location.href = "./login.html";
+      }
+      const BASE_URL = "https://vwdwpswpvqdfpsrkmgzy.supabase.co/functions/v1";
+
+      const TOKEN = "sb_publishable_yI6-VfmXaCmbr7E8GCq6zg_zTUe-rMB";
+
+      async function createUser() {
+        try {
+          const res = await fetch(`${BASE_URL}/createe-engineer`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${TOKEN}`,
+            },
+            body: JSON.stringify({
+              full_name: document.getElementById("name").value,
+              email: document.getElementById("email").value,
+            }),
+          });
+
+          const json = await res.json();
+
+          document.getElementById("result").textContent = JSON.stringify(
+            json,
+            null,
+            2,
           );
 
-        if (
-          suspiciousLog
-        ) {
-          gpsRisk = "high";
+          if (!res.ok) {
+            alert(json.error ?? "Failed");
+            return;
+          }
+
+          loadEngineers();
+        } catch (error) {
+          console.error(error);
+        }
+      }
+      function getStatusBadge(status) {
+        switch (status) {
+          case "active":
+            return '<span style="color:green;font-weight:bold">🟢 Active</span>';
+
+          case "warning":
+            return '<span style="color:orange;font-weight:bold">🟡 Warning</span>';
+
+          case "inactive":
+            return '<span style="color:red;font-weight:bold">🔴 Inactive</span>';
+
+          default:
+            return '<span style="color:gray;font-weight:bold">⚪ Never</span>';
+        }
+      }
+      async function loadEngineers() {
+        
+        try {
+          const res = await fetch(`${BASE_URL}/list-eng`, {
+                   headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${TOKEN}`,
+              "x-admin-password": localStorage.getItem("adminPassword"),
+            
+            },    body: JSON.stringify({
+      from:
+        dashboardFrom,
+      to:
+        dashboardTo,
+    }),
+          });
+
+const data =
+  await res.json();
+
+const engineers =
+  data.engineers;
+
+const totalPhotos =
+  data.totalPhotos ?? 0;
+            const active = engineers.filter((x) => x.status === "active").length;
+
+          const warning = engineers.filter(
+            (x) => x.status === "warning",
+          ).length;
+
+          const inactive = engineers.filter(
+            (x) => x.status === "inactive",
+          ).length;
+
+          const never = engineers.filter((x) => x.status === "never").length;
+
+          document.getElementById("summary").innerHTML = `
+<div style="
+display:flex;
+gap:20px;
+margin:20px 0;
+font-weight:bold;
+">
+<div>👷 Engineers: ${engineers.length}</div>
+<div>📸 Photos: ${totalPhotos}</div>
+<div>🟢 Active: ${active}</div>
+<div>🟡 Warning: ${warning}</div>
+<div>🔴 Inactive: ${inactive}</div>
+<div>⚪ Never Used: ${never}</div>
+</div>
+`;
+
+          const search = document.getElementById("search").value.toLowerCase();
+          const tbody = document.getElementById("engineers");
+
+          tbody.innerHTML = "";
+
+          engineers
+            .filter((engineer) =>
+              (
+                (engineer.full_name ?? "") +
+                (engineer.email ?? "") +
+                (engineer.engineer_code ?? "")
+              )
+                .toLowerCase()
+                .includes(search),
+            )
+            .forEach((engineer) => {
+              const tr = document.createElement("tr");
+
+              tr.innerHTML = `
+          <td>${engineer.full_name ?? ""}</td>
+          <td>${engineer.email ?? ""}</td>
+          <td>${engineer.engineer_code ?? ""}</td>
+<td>${engineer.device_id ?? "-"}</td>
+
+<td>${
+                engineer.last_photo_at
+                  ? new Date(engineer.last_photo_at).toLocaleDateString()
+                  : "-"
+              }</td>
+
+<td>${engineer.days_inactive ?? "-"}</td>
+
+<td>
+  ${
+    engineer.status === "active"
+      ? "🟢 Active"
+      : engineer.status === "warning"
+        ? "🟡 Warning"
+        : engineer.status === "inactive"
+          ? "🔴 Inactive"
+          : "⚪ Never"
+  }
+</td>
+<td>
+  ${engineer.gps_risk === "high" ? "🚨 High" : "✅ Normal"}
+</td>
+          <td class="actions">
+
+            <button
+              onclick="editEngineer(
+                '${engineer.id}',
+                '${(engineer.full_name ?? "").replace(/'/g, "\\'")}',
+                '${(engineer.email ?? "").replace(/'/g, "\\'")}'
+              )"
+            >
+              Edit
+            </button>
+
+            <button
+              onclick="resetPassword(
+                '${engineer.id}'
+              )"
+            >
+              Password
+            </button>
+
+            <button
+              onclick="resetDevice(
+                '${engineer.id}'
+              )"
+            >
+             Reset Device
+            </button>
+
+            <button
+              onclick="viewLogs(
+                '${engineer.id}'
+              )"
+            >
+              Logs
+            </button>
+<button
+  onclick="deleteEngineer(
+    '${engineer.id}'
+  )"
+>
+  Delete
+</button>
+          </td>
+        `;
+              if (engineer.status === "inactive") {
+                tr.style.backgroundColor = "#ffe5e5";
+              }
+
+              if (engineer.status === "warning") {
+                tr.style.backgroundColor = "#fff8dc";
+              }
+              tbody.appendChild(tr);
+            });
+        } catch (error) {
+          console.error(error);
+        }
+      }
+function clearLogFilters() {
+  document.getElementById(
+    "logsFrom",
+  ).value = "";
+
+  document.getElementById(
+    "logsTo",
+  ).value = "";
+
+  reloadCurrentLogs();
+}
+function clearLogFilters() {
+  document.getElementById(
+    "logsFrom",
+  ).value = "";
+
+  document.getElementById(
+    "logsTo",
+  ).value = "";
+
+  reloadCurrentLogs();
+}
+function clearDashboardFilter() {
+  document.getElementById(
+    "dashboardFrom",
+  ).value = "";
+
+  document.getElementById(
+    "dashboardTo",
+  ).value = "";
+
+  loadEngineers();
+}
+      async function editEngineer(id, fullName, email) {
+        const newName = prompt("Full Name", fullName);
+
+        if (!newName) {
+          return;
         }
 
-        return {
-          ...engineer,
+        const newEmail = prompt("Email", email);
 
-          photo_count:
-            photoCount,
+        if (!newEmail) {
+          return;
+        }
 
-          last_photo_at:
-            lastPhotoAt,
+        try {
+          const res = await fetch(`${BASE_URL}/update-engineer`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${TOKEN}`,
+              "x-admin-password": localStorage.getItem("adminPassword"),
+            },
+            body: JSON.stringify({
+              id,
+              full_name: newName,
+              email: newEmail,
+            }),
+          });
 
-          days_inactive:
-            daysInactive,
+          const json = await res.json();
 
-          status:
-            daysInactive ===
-            null
-              ? "never"
-              : daysInactive >=
-                  14
-                ? "inactive"
-                : daysInactive >=
-                    7
-                  ? "warning"
-                  : "active",
+          if (!res.ok) {
+            alert(json.error ?? "Failed");
+            return;
+          }
 
-          gps_risk:
-            gpsRisk,
-        };
-      }),
-    );
+          loadEngineers();
+        } catch (error) {
+          console.error(error);
+        }
+      }
+      async function deleteEngineer(engineerId) {
+        const confirmed = confirm("Delete this engineer permanently?");
 
-    let photosQuery =
-      supabase
-        .from("photo_logs")
-        .select("*", {
-          count: "exact",
-          head: true,
-        });
+        if (!confirmed) {
+          return;
+        }
 
-    if (from) {
-      photosQuery =
-        photosQuery.gte(
-          "taken_at",
-          from,
-        );
-    }
+        try {
+          const res = await fetch(`${BASE_URL}/delete-engineer`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${TOKEN}`,
+              "x-admin-password": localStorage.getItem("adminPassword"),
+            },
+            body: JSON.stringify({
+              engineer_id: engineerId,
+            }),
+          });
 
-    if (to) {
-      photosQuery =
-        photosQuery.lte(
-          "taken_at",
-          `${to} 23:59:59`,
-        );
-    }
+          const json = await res.json();
 
-    const {
-      count: totalPhotos,
-      error: photosError,
-    } = await photosQuery;
+          if (!res.ok) {
+            alert(json.error ?? "Failed");
 
-    if (photosError) {
-      throw photosError;
-    }
+            return;
+          }
 
-    return Response.json(
-      {
-        engineers,
-        totalPhotos:
-          totalPhotos ?? 0,
-      },
-      {
-        headers: {
-          ...corsHeaders,
-          "Content-Type":
-            "application/json",
-        },
-      },
-    );
-  } catch (e) {
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: String(e),
-      }),
-      {
-        status: 500,
-        headers: {
-          ...corsHeaders,
-          "Content-Type":
-            "application/json",
-        },
-      },
-    );
+          alert("Engineer deleted");
+
+          loadEngineers();
+        } catch (error) {
+          console.error(error);
+        }
+      }
+      async function resetPassword(userId) {
+        const password = prompt("New Password", "Field1234");
+
+        if (!password) {
+          return;
+        }
+
+        try {
+          const res = await fetch(`${BASE_URL}/reset-password`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${TOKEN}`,
+            },
+            body: JSON.stringify({
+              user_id: userId,
+              password,
+            }),
+          });
+
+          const json = await res.json();
+
+          if (!res.ok) {
+            alert(json.error ?? "Failed");
+            return;
+          }
+
+          alert("Password updated");
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
+      async function resetDevice(engineerId) {
+        if (!confirm("Reset device?")) {
+          return;
+        }
+
+        try {
+          const res = await fetch(`${BASE_URL}/resetDevice`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${TOKEN}`,
+            },
+            body: JSON.stringify({
+              engineer_id: engineerId,
+            }),
+          });
+
+          const json = await res.json();
+
+          if (!res.ok) {
+            alert(json.error ?? "Failed");
+            return;
+          }
+
+          alert("Device reset successfully");
+
+          loadEngineers();
+        } catch (error) {
+          console.error(error);
+        }
+      }let currentEngineerId = null;
+async function viewLogs(engineerId) {
+  if (
+    currentEngineerId &&
+    currentEngineerId !== engineerId
+  ) {
+    document.getElementById(
+      "logsFrom",
+    ).value = "";
+
+    document.getElementById(
+      "logsTo",
+    ).value = "";
   }
-});
+
+  currentEngineerId =
+    engineerId;
+
+  const from =
+  document.getElementById(
+    "logsFrom",
+  ).value;
+
+const to =
+  document.getElementById(
+    "logsTo",
+  ).value;
+    document.getElementById(
+  "activeFilter",
+).innerHTML =
+  from || to
+    ? `Showing logs from ${from || "Beginning"} to ${to || "Today"}`
+    : "";
+        try {
+          const res = await fetch(`${BASE_URL}/engineer-logs`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${TOKEN}`,"x-admin-password":
+  localStorage.getItem(
+    "adminPassword",
+  ),
+            },
+            body: JSON.stringify({
+              engineer_id: engineerId,from,to
+            }),
+          });
+
+          const json = await res.json();
+
+          const logs = json.result?.data ?? json.data ?? [];
+
+          if (!logs.length) {
+            document.getElementById("logs").innerHTML = "<p>No logs found.</p>";
+
+            return;
+          }
+
+          document.getElementById("logs").innerHTML = `
+          <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Accuracy</th>
+            <th>Network</th>
+            <th>Latitude</th>
+            <th>Longitude</th>
+            <th>Address</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          ${logs
+            .reverse()
+            .map(
+              (log) => `
+                <tr>
+                  <td>${new Date(log.taken_at).toLocaleString()}</td>
+
+                  <td>${Math.round(log.accuracy ?? 0)}m</td>
+
+                  <td>${log.network_type ?? "-"}</td>
+
+                  <td>${log.latitude}</td>
+
+                  <td>${log.longitude}</td>
+
+                  <td>${log.address ?? "-"}</td>
+                </tr>
+              `,
+            )
+            .join("")}
+        </tbody>
+      </table>
+    `;
+        } catch (error) {
+          console.error(error);
+        }
+      }
+    
+    async function reloadCurrentLogs() {
+  if (!currentEngineerId) {
+    return;
+  }
+
+  await viewLogs(
+    currentEngineerId,
+  );
+}  ["name", "email"].forEach((id) => {
+        document.getElementById(id).addEventListener("keydown", (event) => {
+          if (event.key === "Enter") {
+            createUser();
+          }
+        });
+      });
+      
+      loadEngineers();
+    </script>
+  </body>
+</html>
