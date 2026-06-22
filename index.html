@@ -481,12 +481,7 @@ function clearLogFilters() {
       async function viewLogs(engineerId) {
         currentEngineerId =
   engineerId;
-  document.getElementById(
-  "activeFilter",
-).innerHTML =
-  from || to
-    ? `Showing logs from ${from || "Beginning"} to ${to || "Today"}`
-    : "";
+
   const from =
   document.getElementById(
     "logsFrom",
@@ -496,6 +491,12 @@ const to =
   document.getElementById(
     "logsTo",
   ).value;
+    document.getElementById(
+  "activeFilter",
+).innerHTML =
+  from || to
+    ? `Showing logs from ${from || "Beginning"} to ${to || "Today"}`
+    : "";
         try {
           const res = await fetch(`${BASE_URL}/engineer-logs`, {
             method: "POST",
