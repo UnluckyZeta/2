@@ -81,18 +81,20 @@
       oninput="loadEngineers()"
       style="padding: 8px; width: 300px; margin: 10px 0"
     />
+<h3>Dashboard Filter</h3>
+
 <label>From</label>
-<input type="date" id="logsFrom">
+<input type="date" id="dashboardFrom">
 
 <label>To</label>
-<input type="date" id="logsTo">
+<input type="date" id="dashboardTo">
 
-<button onclick="reloadCurrentLogs()">
-  Apply Filter
+<button onclick="loadEngineers()">
+  Apply
 </button>
 
-<button onclick="clearLogFilters()">
-  Clear Filter
+<button onclick="clearDashboardFilter()">
+  Clear
 </button>
     <h2>Engineers</h2>
 
@@ -201,8 +203,15 @@
             },
           });
 
-          const engineers = await res.json();
-          const active = engineers.filter((x) => x.status === "active").length;
+const data =
+  await res.json();
+
+const engineers =
+  data.engineers;
+
+const totalPhotos =
+  data.totalPhotos ?? 0;
+            const active = engineers.filter((x) => x.status === "active").length;
 
           const warning = engineers.filter(
             (x) => x.status === "warning",
@@ -222,6 +231,7 @@ margin:20px 0;
 font-weight:bold;
 ">
 <div>👷 Engineers: ${engineers.length}</div>
+<div>📸 Photos: ${totalPhotos}</div>
 <div>🟢 Active: ${active}</div>
 <div>🟡 Warning: ${warning}</div>
 <div>🔴 Inactive: ${inactive}</div>
