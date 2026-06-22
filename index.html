@@ -130,9 +130,13 @@
 <button onclick="clearLogFilters()">
   Clear Filter
 </button>
-    <h2>Engineer Logs</h2>
+<div id="activeFilter"></div>
 
-    <div id="logs">Select an engineer...</div>
+<h2>Engineer Logs</h2>
+
+<div id="logs">
+  Select an engineer...
+</div>
 
     <script>
       if (localStorage.getItem("admin") !== "true") {
@@ -478,9 +482,22 @@ function clearLogFilters() {
           console.error(error);
         }
       }let currentEngineerId = null;
-      async function viewLogs(engineerId) {
-        currentEngineerId =
-  engineerId;
+async function viewLogs(engineerId) {
+  if (
+    currentEngineerId &&
+    currentEngineerId !== engineerId
+  ) {
+    document.getElementById(
+      "logsFrom",
+    ).value = "";
+
+    document.getElementById(
+      "logsTo",
+    ).value = "";
+  }
+
+  currentEngineerId =
+    engineerId;
 
   const from =
   document.getElementById(
@@ -523,7 +540,6 @@ const to =
           }
 
           document.getElementById("logs").innerHTML = `
-   <div id="activeFilter"></div>
           <table>
         <thead>
           <tr>
