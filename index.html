@@ -81,11 +81,19 @@
       oninput="loadEngineers()"
       style="padding: 8px; width: 300px; margin: 10px 0"
     />
-    From:
-<input type="date" id="dashboardFrom">
+<label>From</label>
+<input type="date" id="logsFrom">
 
-To:
-<input type="date" id="dashboardTo">
+<label>To</label>
+<input type="date" id="logsTo">
+
+<button onclick="reloadCurrentLogs()">
+  Apply Filter
+</button>
+
+<button onclick="clearLogFilters()">
+  Clear Filter
+</button>
     <h2>Engineers</h2>
 
     <button onclick="loadEngineers()">Refresh Engineers</button>
@@ -117,6 +125,10 @@ To:
 
 <button onclick="reloadCurrentLogs()">
   Apply Filter
+</button>
+
+<button onclick="clearLogFilters()">
+  Clear Filter
 </button>
     <h2>Engineer Logs</h2>
 
@@ -316,7 +328,17 @@ font-weight:bold;
           console.error(error);
         }
       }
+function clearLogFilters() {
+  document.getElementById(
+    "logsFrom",
+  ).value = "";
 
+  document.getElementById(
+    "logsTo",
+  ).value = "";
+
+  reloadCurrentLogs();
+}
       async function editEngineer(id, fullName, email) {
         const newName = prompt("Full Name", fullName);
 
@@ -459,6 +481,12 @@ font-weight:bold;
       async function viewLogs(engineerId) {
         currentEngineerId =
   engineerId;
+  document.getElementById(
+  "activeFilter",
+).innerHTML =
+  from || to
+    ? `Showing logs from ${from || "Beginning"} to ${to || "Today"}`
+    : "";
   const from =
   document.getElementById(
     "logsFrom",
@@ -494,7 +522,8 @@ const to =
           }
 
           document.getElementById("logs").innerHTML = `
-      <table>
+   <div id="activeFilter"></div>
+          <table>
         <thead>
           <tr>
             <th>Date</th>
